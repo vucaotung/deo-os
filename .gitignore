@@ -1,0 +1,28 @@
+# Environment & secrets
+.env
+.env.local
+*.env.local
+rclone.conf
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+.next/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Temp
+*.tmp
+03_SPRINTS/
+Z_ARCHIVE/

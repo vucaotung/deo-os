@@ -1,0 +1,21 @@
+{
+  "name": "gdrive_upload",
+  "description": "Upload a file from GoClaw workspace to Google Drive and return a shareable link. Use after office-agent creates a file in 04_OUTPUTS/.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "local_path": {
+        "type": "string",
+        "description": "Workspace-relative path, e.g. 04_OUTPUTS/ke-toan/2026-05/bang-luong.xlsx"
+      },
+      "drive_folder": {
+        "type": "string",
+        "description": "Google Drive subfolder under 'Dẹo Enterprise OS/', e.g. Kế_Toán/Bang_Luong/2026-05"
+      }
+    },
+    "required": ["local_path", "drive_folder"]
+  },
+  "command": "rclone copy \"/app/workspace/{{.local_path}}\" \"gdrive:/Dẹo Enterprise OS/{{.drive_folder}}/\" --config /app/workspace/rclone.conf 2>&1 && rclone link \"gdrive:/Dẹo Enterprise OS/{{.drive_folder}}/$(basename '{{.local_path}}')\" --config /app/workspace/rclone.conf",
+  "timeout_seconds": 90,
+  "enabled": true
+}

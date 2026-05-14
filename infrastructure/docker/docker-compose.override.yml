@@ -1,0 +1,13 @@
+# docker-compose.override.yml
+# Bind-mount local input folder into GoClaw workspace
+# Place in C:\goclaw\ alongside docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f path/to/docker-compose.override.yml up -d
+
+services:
+  goclaw:
+    volumes:
+      # Bind-mount Windows input folder → container inputs
+      - C:/deo-inputs:/app/workspace/05_INPUTS
+    environment:
+      # Rclone config path (already in workspace volume)
+      - RCLONE_CONFIG=/app/workspace/rclone.conf
