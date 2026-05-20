@@ -226,7 +226,9 @@ Khi `promptLen` không đổi sau khi sync AGENTS.md:
 | `promptLen` không thay đổi sau sync | Restart container; check cache layer |
 | Em-dash `—` trong PowerShell `Write-Host` | Dùng ASCII `--` hoặc single quote `'...'` |
 | `>` trong PowerShell double-quote string | Dùng single quote `'...'` |
-| deo tự dùng `use_skill(xlsx)` bỏ qua finance-agent | Update `deo/AGENTS.md` với routing table cứng |
+| deo tự dùng `use_skill(xlsx)` bỏ qua finance-agent | Routing rules đã được inject vào SOUL.md (top) + USER_PREDEFINED.md; chạy deploy.ps1 + restart container |
+| `promptLen` không tăng sau thêm AGENTS.md | Prompt budget đã đầy; routing rules chuyển sang SOUL.md đầu file + USER_PREDEFINED.md ngắn gọn |
+| deo vẫn gọi "Sếp" thay vì "anh Tung" | SOUL.md đã có RULE 3 ở đầu file; sync + restart container |
 
 ## 14. Provider hiện tại (production state)
 

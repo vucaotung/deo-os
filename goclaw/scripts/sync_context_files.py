@@ -32,7 +32,7 @@ AGENTS_DIR = REPO_ROOT / "goclaw" / "agents"
 USERS_DIR  = REPO_ROOT / "goclaw" / "users"
 VAULT_DIR  = REPO_ROOT / "goclaw" / "vault"
 
-AGENT_FILES = ["SOUL.md", "IDENTITY.md", "AGENTS.md", "CAPABILITIES.md", "TOOLS.md"]
+AGENT_FILES = ["SOUL.md", "IDENTITY.md", "AGENTS.md", "CAPABILITIES.md", "TOOLS.md", "USER_PREDEFINED.md"]
 
 # Agents that get per-user USER.md for Vincent
 USER_MD_AGENTS = ["deo", "office-admin-agent"]

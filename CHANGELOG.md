@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.1] - 2026-05-20
+
+### Fixed — deo routing (v2 approach)
+
+- `deo/SOUL.md` — routing imperatives injected at TOP of file (RULE 1/2/3) before all other content; forces model to read routing rules first regardless of prompt budget truncation
+- `deo/USER_PREDEFINED.md` — new short (≤50 lines) routing override file; synced to `agent_context_files` as separate high-priority entry
+- `sync_context_files.py` — added `USER_PREDEFINED.md` to `AGENT_FILES` list so it gets synced to DB
+- `docs/CHEATSHEET.md` — updated section 13 Known Issues with routing diagnosis and fix
+
+### Root cause of previous routing failure
+
+GoClaw prompt budget was already at capacity (~26134 chars from AGENTS_CORE + AGENTS_TASK + other files). Adding AGENTS.md content did not increase `promptLen` — it was being ignored/truncated. Fix: inject critical rules at the START of SOUL.md (which IS included in the live prompt) and in a new short USER_PREDEFINED.md.
+
+---
+
 ## [0.3.0] - 2026-05-20
 
 ### Added — Phase 1 continuation
