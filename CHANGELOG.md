@@ -20,8 +20,19 @@
 - `vincent_USER.md` — identity, preferences, authority cho Vincent (Telegram 7293498822)
 
 **Sync tooling** in `goclaw/scripts/`:
-- `sync_context_files.py` — đẩy agent + user context files từ git vào `agent_context_files` table (DSN env, `--dry-run`, `--agent KEY`)
-- `upload_vault_templates.sh` — upload templates lên GoClaw Vault API qua bearer token
+- `sync_context_files.py` — đẩy agent + user context files + vault docs từ git vào DB
+  - Hỗ trợ `--dry-run`, `--agent KEY`, `--vault`
+  - Đúng schema: `agent_context_files` (tenant_id required), `user_context_files` (per-user), `vault_documents`+`vault_versions`
+- `upload_vault_templates.sh` — alternative upload via Vault API
+- `deploy.ps1` — one-shot: pull → sync → verify
+- `reset_and_restart.ps1` — clear session memory + restart container (bust context cache)
+
+**Hardened deo routing** (`goclaw/agents/deo/`):
+- `AGENTS.md` (5.3 KB) — explicit ROUTING TABLE (keyword → L2 agent), hard rules forbidding `use_skill(xlsx)`, `write_file`, `exec` for output files; approval gate for high-stakes actions
+- `SOUL.md` — strengthened COO framing, "anh Tung" instead of "Sếp", explicit don'ts
+
+**Docs**:
+- `docs/CHEATSHEET.md` — 16-section operational reference: containers, Postgres, schemas, sync workflow, credentials recovery, debug guide, known issues + fixes
 
 ### Deployment notes (chạy từ Win10 workstation)
 
