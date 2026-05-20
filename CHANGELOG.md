@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.3.0] - 2026-05-20
+
+### Added — Phase 1 continuation
+
+**L2 Agent context files (Vietnamese, role-specific)** in `goclaw/agents/`:
+- `finance-agent/` — SOUL, IDENTITY, AGENTS, CAPABILITIES (kế toán VN, biểu thuế TNCN 7 bậc, BHXH 10.5%/21.5%, GTGT 8/10%)
+- `legal-agent/` — pháp chế VN, dẫn BLLĐ 2019, Luật DN 2020, BLDS 2015
+- `hr-agent/` — onboarding/offboarding, phép theo Điều 113 BLLĐ, kỷ luật theo Điều 122/125
+- `crm-agent/` — 10 pipeline stages, BANT/MEDDIC, weighted forecast, follow-up cadence
+
+**Vault templates** in `goclaw/vault/`:
+- `02_templates/ke-toan/bang-luong.md` — template bảng lương VN với BHXH/TNCN
+- `02_templates/legal/hop-dong-lao-dong.md` — mẫu HĐLĐ theo BLLĐ 2019
+- `02_templates/hr/don-xin-nghi-phep.md` — mẫu đơn nghỉ phép
+- `01_company/company-info.md` — master-data công ty (placeholder để owner điền)
+
+**Per-user context** in `goclaw/users/`:
+- `vincent_USER.md` — identity, preferences, authority cho Vincent (Telegram 7293498822)
+
+**Sync tooling** in `goclaw/scripts/`:
+- `sync_context_files.py` — đẩy agent + user context files từ git vào `agent_context_files` table (DSN env, `--dry-run`, `--agent KEY`)
+- `upload_vault_templates.sh` — upload templates lên GoClaw Vault API qua bearer token
+
+### Deployment notes (chạy từ Win10 workstation)
+
+```bash
+# 1. Apply context files vào DB
+DSN=postgresql://goclaw:goclaw@localhost:5432/goclaw \
+  python3 goclaw/scripts/sync_context_files.py --dry-run
+DSN=... python3 goclaw/scripts/sync_context_files.py
+
+# 2. Upload vault templates
+GOCLAW_TOKEN=<bearer> bash goclaw/scripts/upload_vault_templates.sh
+
+# 3. Input bind mount
+mkdir C:\deo-inputs
+cp infrastructure/docker/docker-compose.override.yml C:\goclaw\
+cd C:\goclaw
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.override.yml up -d
+```
+
+### Pending verification (cần workstation)
+- [ ] Run sync_context_files.py
+- [ ] Run upload_vault_templates.sh
+- [ ] Apply docker-compose.override.yml + recreate
+- [ ] Telegram test: "xem các task hiện có" → deo
+- [ ] Telegram test: "tạo bảng lương tháng 5/2026 với 3 nhân viên test" → finance → office → Drive link
+
+---
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
