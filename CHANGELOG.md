@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.3.1] - 2026-05-20
+
+### Fixed — deo routing (v2 approach)
+
+- `deo/SOUL.md` — routing imperatives injected at TOP of file (RULE 1/2/3) before all other content; forces model to read routing rules first regardless of prompt budget truncation
+- `deo/USER_PREDEFINED.md` — new short (≤50 lines) routing override file; synced to `agent_context_files` as separate high-priority entry
+- `sync_context_files.py` — added `USER_PREDEFINED.md` to `AGENT_FILES` list so it gets synced to DB
+- `docs/CHEATSHEET.md` — updated section 13 Known Issues with routing diagnosis and fix
+
+### Root cause of previous routing failure
+
+GoClaw prompt budget was already at capacity (~26134 chars from AGENTS_CORE + AGENTS_TASK + other files). Adding AGENTS.md content did not increase `promptLen` — it was being ignored/truncated. Fix: inject critical rules at the START of SOUL.md (which IS included in the live prompt) and in a new short USER_PREDEFINED.md.
+
+---
+
+## [0.3.0] - 2026-05-20
+
+### Added — Phase 1 continuation
+
+**L2 Agent context files (Vietnamese, role-specific)** in `goclaw/agents/`:
+- `finance-agent/` — SOUL, IDENTITY, AGENTS, CAPABILITIES (kế toán VN, biểu thuế TNCN 7 bậc, BHXH 10.5%/21.5%, GTGT 8/10%)
+- `legal-agent/` — pháp chế VN, dẫn BLLĐ 2019, Luật DN 2020, BLDS 2015
+- `hr-agent/` — onboarding/offboarding, phép theo Điều 113 BLLĐ, kỷ luật theo Điều 122/125
+- `crm-agent/` — 10 pipeline stages, BANT/MEDDIC, weighted forecast, follow-up cadence
+
+**Vault templates** in `goclaw/vault/`:
+- `02_templates/ke-toan/bang-luong.md` — template bảng lương VN với BHXH/TNCN
+- `02_templates/legal/hop-dong-lao-dong.md` — mẫu HĐLĐ theo BLLĐ 2019
+- `02_templates/hr/don-xin-nghi-phep.md` — mẫu đơn nghỉ phép
+- `01_company/company-info.md` — master-data công ty (placeholder để owner điền)
+
+**Per-user context** in `goclaw/users/`:
+- `vincent_USER.md` — identity, preferences, authority cho Vincent (Telegram 7293498822)
+
+**Sync tooling** in `goclaw/scripts/`:
+- `sync_context_files.py` — đẩy agent + user context files + vault docs từ git vào DB
+  - Hỗ trợ `--dry-run`, `--agent KEY`, `--vault`
+  - Đúng schema: `agent_context_files` (tenant_id required), `user_context_files` (per-user), `vault_documents`+`vault_versions`
+- `upload_vault_templates.sh` — alternative upload via Vault API
+- `deploy.ps1` — one-shot: pull → sync → verify
+- `reset_and_restart.ps1` — clear session memory + restart container (bust context cache)
+
+**Hardened deo routing** (`goclaw/agents/deo/`):
+- `AGENTS.md` (5.3 KB) — explicit ROUTING TABLE (keyword → L2 agent), hard rules forbidding `use_skill(xlsx)`, `write_file`, `exec` for output files; approval gate for high-stakes actions
+- `SOUL.md` — strengthened COO framing, "anh Tung" instead of "Sếp", explicit don'ts
+
+**Docs**:
+- `docs/CHEATSHEET.md` — 16-section operational reference: containers, Postgres, schemas, sync workflow, credentials recovery, debug guide, known issues + fixes
+
+### Deployment notes (chạy từ Win10 workstation)
+
+```bash
+# 1. Apply context files vào DB
+DSN=postgresql://goclaw:goclaw@localhost:5432/goclaw \
+  python3 goclaw/scripts/sync_context_files.py --dry-run
+DSN=... python3 goclaw/scripts/sync_context_files.py
+
+# 2. Upload vault templates
+GOCLAW_TOKEN=<bearer> bash goclaw/scripts/upload_vault_templates.sh
+
+# 3. Input bind mount
+mkdir C:\deo-inputs
+cp infrastructure/docker/docker-compose.override.yml C:\goclaw\
+cd C:\goclaw
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.override.yml up -d
+```
+
+### Pending verification (cần workstation)
+- [ ] Run sync_context_files.py
+- [ ] Run upload_vault_templates.sh
+- [ ] Apply docker-compose.override.yml + recreate
+- [ ] Telegram test: "xem các task hiện có" → deo
+- [ ] Telegram test: "tạo bảng lương tháng 5/2026 với 3 nhân viên test" → finance → office → Drive link
+
+---
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
