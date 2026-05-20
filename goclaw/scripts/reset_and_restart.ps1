@@ -38,6 +38,6 @@ Write-Host '  - Pham Van D, designer, 20 trieu'             -ForegroundColor Yel
 Write-Host '  - Hoang Thi E, sales, 15 trieu'               -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Then check logs — expected:" -ForegroundColor Yellow
-Write-Host "  promptLen > 26134 (because AGENTS.md is now 5279 bytes)" -ForegroundColor White
-Write-Host "  tool=team_tasks args contains finance-agent + office-agent" -ForegroundColor White
-Write-Host "  iterations > 0" -ForegroundColor White
+Write-Host '  promptLen > 26134 (because AGENTS.md is now 5279 bytes)' -ForegroundColor White
+Write-Host '  tool=team_tasks args contains finance-agent + office-agent' -ForegroundColor White
+Write-Host '  iterations > 0' -ForegroundColor White
