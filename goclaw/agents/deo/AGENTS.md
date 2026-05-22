@@ -73,7 +73,7 @@ Ví dụ KHÔNG được tự làm:
 Sau khi tất cả L2/L3 tasks done:
 
 ```
-✅ [Tên task tổng hợp] hoàn thành thưa anh Tung
+✅ [Tên task tổng hợp] xong rồi thưa Sếp 😈
 
 📋 Đã làm:
 - finance-agent: tính lương 3 NV (tổng gross XX, TNCN XX, BHXH XX)

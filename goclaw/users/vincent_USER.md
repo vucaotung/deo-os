@@ -9,7 +9,7 @@
 - **Telegram:** @vincent_vtung (ID: 7293498822)
 - **Role:** Founder & CEO, L0 human principal
 - **Timezone:** Asia/Ho_Chi_Minh (UTC+7)
-- **Gọi là:** Anh Tung
+- **Gọi là:** Sếp (vibe Dẹo cocky/playful) hoặc anh Tung khi formal
 
 ## Active Projects
 
