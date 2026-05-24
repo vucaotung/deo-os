@@ -1,7 +1,7 @@
 # Dẹo Enterprise OS — Operations Cheatsheet
 
 > Quick-reference cho các lệnh hay dùng trên Xeon Win10 workstation.
-> Cập nhật lần cuối: 2026-05-20 (v0.3.0)
+> Cập nhật lần cuối: 2026-05-24 (v0.4.0 — sau upgrade GoClaw v3.12.0)
 
 ---
 
@@ -226,7 +226,10 @@ Khi `promptLen` không đổi sau khi sync AGENTS.md:
 | `promptLen` không thay đổi sau sync | Restart container; check cache layer |
 | Em-dash `—` trong PowerShell `Write-Host` | Dùng ASCII `--` hoặc single quote `'...'` |
 | `>` trong PowerShell double-quote string | Dùng single quote `'...'` |
-| deo tự dùng `use_skill(xlsx)` bỏ qua finance-agent | Routing rules đã được inject vào SOUL.md (top) + USER_PREDEFINED.md; chạy deploy.ps1 + restart container |
+| deo tự dùng `use_skill(xlsx)` bỏ qua finance-agent | (1) Routing rules ở SOUL.md top + USER_PREDEFINED.md; (2) v3.12.0: skill_agent_grants enforce — chỉ cấp xlsx/docx cho office-agent |
+| `no route-eligible chatgpt_oauth providers available` sau upgrade | Provider tokens hết hạn; switch sang `9router` (claude code subscription) hoặc re-auth OAuth qua web UI |
+| `web_search: no search providers configured` / `references unknown provider name=exa` | Override `builtin_tool_tenant_configs` để disable exa, dùng tavily+brave (đã có key) |
+| `claude-cli: binary not found` sau recreate | Chạy `setup_all_tools.sh` để re-install claude CLI, rồi `setup_credentials.sh` |
 | `promptLen` không tăng sau thêm AGENTS.md | Prompt budget đã đầy; routing rules chuyển sang SOUL.md đầu file + USER_PREDEFINED.md ngắn gọn |
 | deo vẫn gọi "Sếp" thay vì "anh Tung" | SOUL.md đã có RULE 3 ở đầu file; sync + restart container |
 
@@ -236,14 +239,56 @@ Khi `promptLen` không đổi sau khi sync AGENTS.md:
 SELECT agent_key, provider, model FROM agents;
 ```
 
-Tại 2026-05-20:
-- `deo`: `openai-codex` / `gpt-5.4` (KHÔNG phải `claude-cli` như CHANGELOG v0.2.0)
-- Các agent khác: kiểm tra theo từng case
+Tại 2026-05-24 (sau upgrade GoClaw v3.12.0):
+- `deo`: `9router` / `claude-sonnet-4-6` (via 9router proxy @ localhost:20128)
+- 9router fan-out tới Claude Code subscription, không cần OAuth reauth
+- 4 chatgpt_oauth providers (openai-codex*, 3-enterpriseos-bond) đều ở state `reauth` — cần re-login nếu muốn dùng lại
 
 Để đổi provider:
 ```sql
-UPDATE agents SET provider='claude', model='claude-sonnet' WHERE agent_key='deo';
+UPDATE agents SET provider='9router', model='claude-sonnet-4-6' WHERE agent_key='deo';
 ```
+
+### 9router setup (provider mới)
+- Repo: https://github.com/decolua/9router
+- Endpoint: `http://localhost:20128/v1` (OpenAI-compatible)
+- Models: claude-sonnet-4-6, claude-sonnet-4-5, gemini, gpt-5, etc.
+- Token-saving: compress tool outputs 20-40%
+- Auto-fallback giữa subscription tiers
+
+## 14a. Web search providers (v3.12.0)
+
+Default global config trong `builtin_tools.settings` có `provider_order: [exa, tavily, brave]` — exa fail vì không có API key, làm web_search tịt. Override per-tenant:
+
+```sql
+INSERT INTO builtin_tool_tenant_configs (tool_name, tenant_id, enabled, settings)
+VALUES ('web_search', '0193a5b0-7000-7000-8000-000000000001', true,
+'{"exa": {"enabled": false}, "tavily": {"enabled": true}, "brave": {"enabled": true}, "duckduckgo": {"enabled": true}, "provider_order": ["tavily", "brave", "duckduckgo"]}'::jsonb)
+ON CONFLICT (tool_name, tenant_id) DO UPDATE SET settings=EXCLUDED.settings;
+```
+
+Hoặc chạy: `.\goclaw\scripts\fix_web_search.ps1`
+
+Search API keys lưu mã hóa trong `config_secrets`:
+- `tools.web.tavily.api_key`
+- `tools.web.brave.api_key`
+
+## 14b. Skill grants (v3.12.0 — privacy controls)
+
+Skills: docx, pdf, pptx, xlsx, xu-ly-van-phong, skill-creator (6 tổng)
+
+Default: open (mọi agent dùng được). Để enforce delegation pipeline, grant cụ thể:
+
+```sql
+-- office-agent độc quyền xlsx/docx/pptx/pdf
+INSERT INTO skill_agent_grants (skill_id, agent_id, pinned_version, granted_by, tenant_id)
+SELECT s.id, a.id, 1, 'admin', '0193a5b0-7000-7000-8000-000000000001'
+FROM skills s, agents a
+WHERE a.agent_key = 'office-agent' AND s.name IN ('xlsx', 'docx', 'pptx', 'pdf')
+ON CONFLICT DO NOTHING;
+```
+
+Hoặc chạy: `.\goclaw\scripts\setup_skill_grants.ps1`
 
 ## 15. Vault upload (bypass API)
 

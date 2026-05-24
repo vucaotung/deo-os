@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.4.0] - 2026-05-24
+
+### Upgrade — GoClaw v3.12.0 (image 2026-05-20)
+
+**Schema migration**: v55 → v67 (12 migrations applied automatically)
+- New tables: `workstations`, `workstation_permissions`, `workstation_activity`, `agent_workstation_links` (Remote Workstation Runtime)
+- New tables: `mcp_agent_grants`, `mcp_user_grants`, `secure_cli_agent_grants` (MCP + CLI grant system)
+- Data migration `055_web_search_legacy_keys_to_config_secrets` — search API keys moved to encrypted `config_secrets` table
+
+**Provider switch**: deo từ `openai-codex/gpt-5.4` → `9router/claude-sonnet-4-6`
+- Lý do: v3.12.0 đổi OAuth flow → all 4 chatgpt_oauth providers stuck ở state `reauth`
+- 9router (https://github.com/decolua/9router) là local proxy @ port 20128, OpenAI-compatible API, fan-out tới Claude Code subscription
+- Bonus: token compression 20-40%, auto-fallback giữa tiers
+
+### Added — Operational scripts
+
+- `goclaw/scripts/fix_web_search.ps1` — override `builtin_tool_tenant_configs` để disable exa (no API key), prefer tavily+brave (đã có key)
+- `goclaw/scripts/setup_skill_grants.ps1` — grant xlsx/docx/pptx/pdf cho office-agent only, enforce delegation pipeline
+
+### Updated docs
+
+- `docs/CHEATSHEET.md` — sections 14, 14a (web search), 14b (skill grants), known issues mở rộng
+
+### Known issues sau upgrade
+
+- 4 OAuth providers (openai-codex*, 3-enterpriseos-bond) ở state `reauth` — cần re-login nếu muốn dùng lại
+- `claude-cli` binary bị clear sau recreate container — phải chạy `setup_all_tools.sh` mỗi lần
+- `embedding provider` chưa config → memory chunks stored without vectors (semantic search degraded)
+
+---
+
 ## [0.3.1] - 2026-05-20
 
 ### Fixed — deo routing (v2 approach)
