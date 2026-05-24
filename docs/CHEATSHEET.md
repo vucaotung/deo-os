@@ -273,6 +273,22 @@ Search API keys lưu mã hóa trong `config_secrets`:
 - `tools.web.tavily.api_key`
 - `tools.web.brave.api_key`
 
+## 14c. 9router skills (extra AI capabilities)
+
+5 skills bổ sung từ 9router cho phép deo gọi: embeddings, web-fetch, image-gen, STT, TTS.
+
+Install: `.\goclaw\scripts\install_9router_skills.ps1`
+
+| Skill | Use case |
+|-------|----------|
+| `9router-embeddings` | Fix "no embedding provider" — bật memory_search semantic |
+| `9router-web-fetch` | Web fetch chất lượng cao (Firecrawl/Jina/Tavily) thay defuddle hay fail |
+| `9router-image` | Generate ảnh từ prompt (DALL-E, FLUX, Gemini) |
+| `9router-stt` | Transcribe audio (OpenAI/Groq/Deepgram) — xử lý voice message Telegram |
+| `9router-tts` | Text-to-speech (ElevenLabs, OpenAI, Edge) |
+
+Skills tự seed vào DB khi container restart, từ `/app/data/skills-store/`.
+
 ## 14b. Skill grants (v3.12.0 — privacy controls)
 
 Skills: docx, pdf, pptx, xlsx, xu-ly-van-phong, skill-creator (6 tổng)
