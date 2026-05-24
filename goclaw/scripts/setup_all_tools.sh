@@ -13,9 +13,13 @@ pip install \
   reportlab==4.4.10 \
   pypdf==6.10.2 \
   pdfplumber==0.11.9 \
-  pdf2docx \
   Pillow lxml \
   --break-system-packages -q
+
+echo "[1b/3] Installing pdf2docx + deps (cv2 từ apk để tránh build 95MB opencv từ source)..."
+apk add --no-cache py3-opencv
+pip install PyMuPDF fonttools fire --break-system-packages -q
+pip install pdf2docx --break-system-packages --no-deps -q
 
 echo "[2/3] Installing system tools..."
 apk add --no-cache rclone pandoc-cli
