@@ -13,6 +13,7 @@ pip install \
   reportlab==4.4.10 \
   pypdf==6.10.2 \
   pdfplumber==0.11.9 \
+  pdf2docx \
   Pillow lxml \
   --break-system-packages -q
 
