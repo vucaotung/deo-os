@@ -13,21 +13,48 @@
 - Lý do: v3.12.0 đổi OAuth flow → all 4 chatgpt_oauth providers stuck ở state `reauth`
 - 9router (https://github.com/decolua/9router) là local proxy @ port 20128, OpenAI-compatible API, fan-out tới Claude Code subscription
 - Bonus: token compression 20-40%, auto-fallback giữa tiers
+- Cleanup: disabled 4 dead OAuth providers via `enabled=false`
+- Fixed consolidation pipeline: `background.provider=9router`, `background.model=cc/claude-sonnet-4-6`
+
+### Added — 9router skills (5 skills uploaded via gallery)
+
+Capabilities mở rộng cho deo + L2 agents:
+
+| Skill | Granted to | Use case |
+|-------|------------|----------|
+| `9router-embeddings` | all 13 agents | semantic memory, RAG |
+| `9router-web-fetch` | deo, researcher, legal, crm, marketing | URL → markdown qua Firecrawl/Jina/Tavily |
+| `9router-image` | deo, marketing, office | DALL-E/FLUX/Gemini Imagen |
+| `9router-stt` | deo, office-admin | voice msg Telegram → text |
+| `9router-tts` | deo, office-admin | text → voice reply |
 
 ### Added — Operational scripts
 
-- `goclaw/scripts/fix_web_search.ps1` — override `builtin_tool_tenant_configs` để disable exa (no API key), prefer tavily+brave (đã có key)
-- `goclaw/scripts/setup_skill_grants.ps1` — grant xlsx/docx/pptx/pdf cho office-agent only, enforce delegation pipeline
+- `fix_web_search.ps1` — override `builtin_tool_tenant_configs` để disable exa (no API key), prefer tavily+brave (đã có key)
+- `setup_skill_grants.ps1` — grant xlsx/docx/pptx/pdf cho office-agent only (enforce delegation pipeline)
+- `install_9router_skills.ps1` — download tarball + docker cp 5 skill folders vào `/app/data/skills-store/` (container không có `git`)
+- `cleanup_post_upgrade.ps1` — disable dead OAuth providers + fix consolidation pipeline
+- `grant_9router_skills.ps1` — assign 5 9router skills tới agents theo use-case mapping (25 grants total)
+
+### Fixed — pdf2docx skill missing deps
+
+- `setup_all_tools.sh`: thêm `apk add py3-opencv` + `pip install pdf2docx --no-deps` để skip build opencv-python-headless từ source (95MB tarball, fail trên /tmp nhỏ)
+- Workaround: cv2 từ apk (prebuilt) thay vì pip wheel không tồn tại cho musllinux/Alpine
 
 ### Updated docs
 
-- `docs/CHEATSHEET.md` — sections 14, 14a (web search), 14b (skill grants), known issues mở rộng
+- `CHEATSHEET.md`:
+  - §14 — provider 9router + claude-sonnet-4-6
+  - §14a — web search providers fix
+  - §14b — skill grants (v3.12.0 privacy controls)
+  - §14c — 9router skills (5 capabilities)
+  - Known issues mở rộng: OAuth reauth, claude binary clear, consolidation pipeline, opencv install
 
-### Known issues sau upgrade
+### Known issues còn lại
 
-- 4 OAuth providers (openai-codex*, 3-enterpriseos-bond) ở state `reauth` — cần re-login nếu muốn dùng lại
-- `claude-cli` binary bị clear sau recreate container — phải chạy `setup_all_tools.sh` mỗi lần
-- `embedding provider` chưa config → memory chunks stored without vectors (semantic search degraded)
+- `embedding provider` chưa enable trên 9router → memory chunks stored without vectors (semantic search degraded). Cần update `llm_providers.settings` cho 9router với embedding model.
+- Agent Teams (`agent_teams`, `agent_team_members`) chưa setup formal — deo gọi `team_tasks` có thể fall back về subagent mode. Cần tạo team "deo-coo-team" với roles lead/member.
+- `claude-cli` binary bị clear sau mỗi recreate container — chạy `setup_all_tools.sh` để re-install.
 
 ---
 
