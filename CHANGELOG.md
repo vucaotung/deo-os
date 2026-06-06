@@ -1,5 +1,139 @@
 # Changelog
 
+## [0.4.0] - 2026-05-24
+
+### Upgrade — GoClaw v3.12.0 (image 2026-05-20)
+
+**Schema migration**: v55 → v67 (12 migrations applied automatically)
+- New tables: `workstations`, `workstation_permissions`, `workstation_activity`, `agent_workstation_links` (Remote Workstation Runtime)
+- New tables: `mcp_agent_grants`, `mcp_user_grants`, `secure_cli_agent_grants` (MCP + CLI grant system)
+- Data migration `055_web_search_legacy_keys_to_config_secrets` — search API keys moved to encrypted `config_secrets` table
+
+**Provider switch**: deo từ `openai-codex/gpt-5.4` → `9router/claude-sonnet-4-6`
+- Lý do: v3.12.0 đổi OAuth flow → all 4 chatgpt_oauth providers stuck ở state `reauth`
+- 9router (https://github.com/decolua/9router) là local proxy @ port 20128, OpenAI-compatible API, fan-out tới Claude Code subscription
+- Bonus: token compression 20-40%, auto-fallback giữa tiers
+- Cleanup: disabled 4 dead OAuth providers via `enabled=false`
+- Fixed consolidation pipeline: `background.provider=9router`, `background.model=cc/claude-sonnet-4-6`
+
+### Added — 9router skills (5 skills uploaded via gallery)
+
+Capabilities mở rộng cho deo + L2 agents:
+
+| Skill | Granted to | Use case |
+|-------|------------|----------|
+| `9router-embeddings` | all 13 agents | semantic memory, RAG |
+| `9router-web-fetch` | deo, researcher, legal, crm, marketing | URL → markdown qua Firecrawl/Jina/Tavily |
+| `9router-image` | deo, marketing, office | DALL-E/FLUX/Gemini Imagen |
+| `9router-stt` | deo, office-admin | voice msg Telegram → text |
+| `9router-tts` | deo, office-admin | text → voice reply |
+
+### Added — Operational scripts
+
+- `fix_web_search.ps1` — override `builtin_tool_tenant_configs` để disable exa (no API key), prefer tavily+brave (đã có key)
+- `setup_skill_grants.ps1` — grant xlsx/docx/pptx/pdf cho office-agent only (enforce delegation pipeline)
+- `install_9router_skills.ps1` — download tarball + docker cp 5 skill folders vào `/app/data/skills-store/` (container không có `git`)
+- `cleanup_post_upgrade.ps1` — disable dead OAuth providers + fix consolidation pipeline
+- `grant_9router_skills.ps1` — assign 5 9router skills tới agents theo use-case mapping (25 grants total)
+
+### Fixed — pdf2docx skill missing deps
+
+- `setup_all_tools.sh`: thêm `apk add py3-opencv` + `pip install pdf2docx --no-deps` để skip build opencv-python-headless từ source (95MB tarball, fail trên /tmp nhỏ)
+- Workaround: cv2 từ apk (prebuilt) thay vì pip wheel không tồn tại cho musllinux/Alpine
+
+### Updated docs
+
+- `CHEATSHEET.md`:
+  - §14 — provider 9router + claude-sonnet-4-6
+  - §14a — web search providers fix
+  - §14b — skill grants (v3.12.0 privacy controls)
+  - §14c — 9router skills (5 capabilities)
+  - Known issues mở rộng: OAuth reauth, claude binary clear, consolidation pipeline, opencv install
+
+### Known issues còn lại
+
+- `embedding provider` chưa enable trên 9router → memory chunks stored without vectors (semantic search degraded). Cần update `llm_providers.settings` cho 9router với embedding model.
+- Agent Teams (`agent_teams`, `agent_team_members`) chưa setup formal — deo gọi `team_tasks` có thể fall back về subagent mode. Cần tạo team "deo-coo-team" với roles lead/member.
+- `claude-cli` binary bị clear sau mỗi recreate container — chạy `setup_all_tools.sh` để re-install.
+
+---
+
+## [0.3.1] - 2026-05-20
+
+### Fixed — deo routing (v2 approach)
+
+- `deo/SOUL.md` — routing imperatives injected at TOP of file (RULE 1/2/3) before all other content; forces model to read routing rules first regardless of prompt budget truncation
+- `deo/USER_PREDEFINED.md` — new short (≤50 lines) routing override file; synced to `agent_context_files` as separate high-priority entry
+- `sync_context_files.py` — added `USER_PREDEFINED.md` to `AGENT_FILES` list so it gets synced to DB
+- `docs/CHEATSHEET.md` — updated section 13 Known Issues with routing diagnosis and fix
+
+### Root cause of previous routing failure
+
+GoClaw prompt budget was already at capacity (~26134 chars from AGENTS_CORE + AGENTS_TASK + other files). Adding AGENTS.md content did not increase `promptLen` — it was being ignored/truncated. Fix: inject critical rules at the START of SOUL.md (which IS included in the live prompt) and in a new short USER_PREDEFINED.md.
+
+---
+
+## [0.3.0] - 2026-05-20
+
+### Added — Phase 1 continuation
+
+**L2 Agent context files (Vietnamese, role-specific)** in `goclaw/agents/`:
+- `finance-agent/` — SOUL, IDENTITY, AGENTS, CAPABILITIES (kế toán VN, biểu thuế TNCN 7 bậc, BHXH 10.5%/21.5%, GTGT 8/10%)
+- `legal-agent/` — pháp chế VN, dẫn BLLĐ 2019, Luật DN 2020, BLDS 2015
+- `hr-agent/` — onboarding/offboarding, phép theo Điều 113 BLLĐ, kỷ luật theo Điều 122/125
+- `crm-agent/` — 10 pipeline stages, BANT/MEDDIC, weighted forecast, follow-up cadence
+
+**Vault templates** in `goclaw/vault/`:
+- `02_templates/ke-toan/bang-luong.md` — template bảng lương VN với BHXH/TNCN
+- `02_templates/legal/hop-dong-lao-dong.md` — mẫu HĐLĐ theo BLLĐ 2019
+- `02_templates/hr/don-xin-nghi-phep.md` — mẫu đơn nghỉ phép
+- `01_company/company-info.md` — master-data công ty (placeholder để owner điền)
+
+**Per-user context** in `goclaw/users/`:
+- `vincent_USER.md` — identity, preferences, authority cho Vincent (Telegram 7293498822)
+
+**Sync tooling** in `goclaw/scripts/`:
+- `sync_context_files.py` — đẩy agent + user context files + vault docs từ git vào DB
+  - Hỗ trợ `--dry-run`, `--agent KEY`, `--vault`
+  - Đúng schema: `agent_context_files` (tenant_id required), `user_context_files` (per-user), `vault_documents`+`vault_versions`
+- `upload_vault_templates.sh` — alternative upload via Vault API
+- `deploy.ps1` — one-shot: pull → sync → verify
+- `reset_and_restart.ps1` — clear session memory + restart container (bust context cache)
+
+**Hardened deo routing** (`goclaw/agents/deo/`):
+- `AGENTS.md` (5.3 KB) — explicit ROUTING TABLE (keyword → L2 agent), hard rules forbidding `use_skill(xlsx)`, `write_file`, `exec` for output files; approval gate for high-stakes actions
+- `SOUL.md` — strengthened COO framing, "anh Tung" instead of "Sếp", explicit don'ts
+
+**Docs**:
+- `docs/CHEATSHEET.md` — 16-section operational reference: containers, Postgres, schemas, sync workflow, credentials recovery, debug guide, known issues + fixes
+
+### Deployment notes (chạy từ Win10 workstation)
+
+```bash
+# 1. Apply context files vào DB
+DSN=postgresql://goclaw:goclaw@localhost:5432/goclaw \
+  python3 goclaw/scripts/sync_context_files.py --dry-run
+DSN=... python3 goclaw/scripts/sync_context_files.py
+
+# 2. Upload vault templates
+GOCLAW_TOKEN=<bearer> bash goclaw/scripts/upload_vault_templates.sh
+
+# 3. Input bind mount
+mkdir C:\deo-inputs
+cp infrastructure/docker/docker-compose.override.yml C:\goclaw\
+cd C:\goclaw
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml -f docker-compose.override.yml up -d
+```
+
+### Pending verification (cần workstation)
+- [ ] Run sync_context_files.py
+- [ ] Run upload_vault_templates.sh
+- [ ] Apply docker-compose.override.yml + recreate
+- [ ] Telegram test: "xem các task hiện có" → deo
+- [ ] Telegram test: "tạo bảng lương tháng 5/2026 với 3 nhân viên test" → finance → office → Drive link
+
+---
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
